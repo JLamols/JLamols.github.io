@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project_Lamo :: Accessing...</title>
+    <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/google/material-design-icons/master/src/action/android/materialicons/24px.svg">
+    <style>
+        /* --- Global Styles & Fonts --- */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --black: #0a0a0a;
+            --green: #00ff41;
+            --secondary-green: #008f11;
+            --white: #f0f0f0;
+            --grey: #555;
+            --red: #ff0033;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--black);
+            color: var(--green);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        /* --- Main Terminal Container --- */
+        #terminal {
+            height: 100vh;
+            width: 100%;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal-output {
+            flex-grow: 1;
+        }
+
+        /* --- Text & Line Styling --- */
+        p, a {
+            color: var(--green);
+            word-wrap: break-word;
+        }
+
+        a {
+            text-decoration: none;
+            border-bottom: 1px dashed var(--green);
+        }
+
+        a:hover {
+            color: var(--secondary-green);
+            border-bottom-style: solid;
+        }
+        
+        .prompt {
+            color: var(--secondary-green);
+        }
+
+        .error {
+            color: var(--red);
+        }
+        
+        .highlight {
+            color: var(--white);
+            background-color: var(--secondary-green);
+            padding: 2px 4px;
+        }
+
+        /* --- Input Line --- */
+        .input-line {
+            display: flex;
+            align-items: center;
+        }
+
+        .input-line .prompt {
+            margin-right: 8px;
+        }
+
+        #command-input {
+            background: transparent;
+            border: none;
+            color: var(--green);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 16px;
+            flex-grow: 1;
+            outline: none;
+        }
+
+        #command-input::placeholder {
+            color: var(--grey);
+        }
+
+        /* --- Blinking Cursor Effect --- */
+        #command-input:focus + .cursor {
+            animation: blink 1s step-end infinite;
+        }
+
+        .cursor {
+            width: 10px;
+            height: 1.2em;
+            background: var(--green);
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+
+        @keyframes blink {
+            from, to { background-color: transparent }
+            50% { background-color: var(--green) }
+        }
+
+        /* --- Glitch Effect --- */
+        .glitch {
+            animation: glitch 1.5s linear infinite;
+        }
+
+        @keyframes glitch{
+          2%,64%{
+            transform: translate(2px,0) skew(0deg);
+          }
+          4%,60%{
+            transform: translate(-2px,0) skew(0deg);
+          }
+          62%{
+            transform: translate(0,0) skew(5deg);
+          }
+        }
+
+        .glitch:before,
+        .glitch:after{
+          content: attr(data-text);
+          position: absolute;
+          left: 0;
+          width: 100%;
+          height: 100%;
+        }
+
+        .glitch:before{
+          left: 2px;
+          text-shadow: -2px 0 var(--red);
+          clip: rect(44px, 450px, 56px, 0);
+          animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+
+        .glitch:after{
+          left: -2px;
+          text-shadow: -2px 0 var(--secondary-green), 2px 2px var(--red);
+          clip: rect(85px, 450px, 90px, 0);
+          animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim{
+          0% { clip: rect(12px, 9999px, 89px, 0); }
+          /* ... (add more steps for a complex glitch) ... */
+          100% { clip: rect(81px, 9999px, 86px, 0); }
+        }
+
+        @keyframes glitch-anim-2{
+          0% { clip: rect(78px, 9999px, 34px, 0); }
+          /* ... (add more steps for a complex glitch) ... */
+          100% { clip: rect(4px, 9999px, 92px, 0); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="terminal">
+    <div class="terminal-output" id="output"></div>
+    <div class="input-line">
+        <span class="prompt" id="prompt">guest@lamo.bd:~$</span>
+        <input type="text" id="command-input" autocomplete="off" autofocus>
+        <span class="cursor"></span>
+    </div>
+</div>
+
+<script>
+const output = document.getElementById('output');
+const input = document.getElementById('command-input');
+const terminal = document.getElementById('terminal');
+
+const commands = {
+    help: `
+        <p>Available commands:</p>
+        <p><span class="highlight">about</span>          - Who is Julian Lamo?</p>
+        <p><span class="highlight">skills</span>         - View technical capabilities.</p>
+        <p><span class="highlight">projects</span>       - See past operations.</p>
+        <p><span class="highlight">contact</span>        - Initiate contact protocol.</p>
+        <p><span class="highlight">ls</span>             - List files in the current directory.</p>
+        <p><span class="highlight">cat &lt;file&gt;</span>   - Display file content.</p>
+        <p><span class="highlight">clear</span>          - Clear the terminal screen.</p>
+        <p><span class="highlight">sudo</span>           - Try your luck.</p>
+    `,
+    about: `
+        <p>Julian Lamo is a name whispered in the digital shadows of Bangladesh. A phantom in the machine, a student of the esoteric arts of cyberspace. I don't break systems; I reveal their inherent flaws. My philosophy is simple: information, like the Jamuna river, must flow freely. This portfolio is not a resume; it's a testament to a life lived between the ones and zeros.</p>
+    `,
+    skills: `
+        <p>--- [ SKILL MATRIX ] ---</p>
+        <p><strong>OSINT & Social Engineering:</strong> Master of digital reconnaissance and human element manipulation.</p>
+        <p><strong>Network Penetration Testing:</strong> Nmap, Wireshark, Metasploit Framework, Burp Suite.</p>
+        <p><strong>Web Application Security:</strong> SQLi, XSS, CSRF, LFI/RFI, OWASP Top 10.</p>
+        <p><strong>Scripting & Automation:</strong> Python (Scapy, Requests), Bash.</p>
+        <p><strong>Cryptography:</strong> Understanding of encryption/decryption algorithms and protocols.</p>
+        <p><strong>Anonymity Networks:</strong> Tor, I2P, VPN Chains.</p>
+    `,
+    projects: `
+        <p>Accessing case files... Decrypting...</p>
+        <p>---</p>
+        <p><span class="highlight">Operation Sundarban-Sentinel:</span> [REDACTED] corporate network audit. Revealed critical vulnerabilities in their external-facing servers, preventing a potential large-scale data breach. Methodology involved advanced port scanning and a custom-developed exploit for their outdated firewall firmware.</p>
+        <p><span class="highlight">Project Padma-Phish:</span> A controlled phishing simulation for a local financial institution. Achieved a 67% success rate, prompting a complete overhaul of their internal security awareness training. The report was classified as 'EYES ONLY'.</p>
+        <p><span class="highlight">Case File #003:</span> [DATA CORRUPTED]... Access Denied.</p>
+    `,
+    contact: `
+        <p>For secure communication, use the following channels. Do not mention my name directly.</p>
+        <p><strong>Email:</strong> <a href="mailto:decoy@protonmail.com" target="_blank">jl.sec.ops@protonmail.ch</a> (Use PGP)</p>
+        <p><strong>PGP Key:</strong></p>
+        <pre>
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+[Your PGP Public Key Block Would Go Here. This is a placeholder.]
+mQINBF...
+...
+=1234
+-----END PGP PUBLIC KEY BLOCK-----
+        </pre>
+        <p>I will find you, or you will find me.</p>
+    `,
+    ls: `
+        <p>about.txt   skills.log   projects.db</p>
+    `,
+    sudo: `
+        <p class="error">User 'guest' is not in the sudoers file. This incident will be reported.</p>
+    `,
+    clear: ''
+};
+
+const catFiles = {
+    'about.txt': commands.about,
+    'skills.log': commands.skills,
+    'projects.db': commands.projects
+};
+
+const welcomeMessage = `
+<p class="glitch" data-text="SYSTEM BREACH DETECTED...">SYSTEM BREACH DETECTED...</p>
+<p>Authenticating...</p>
+<p>... Access Granted. Welcome, stranger.</p>
+<p>This is the private terminal of Julian Lamo. Proceed with caution.</p>
+<p>Type '<span class="highlight">help</span>' to see a list of available commands.</p>
+<br>
+`;
+
+function typeToTerminal(text) {
+    output.innerHTML += text;
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+function executeCommand(command) {
+    typeToTerminal(`<p><span class="prompt">guest@lamo.bd:~$</span> ${command}</p>`);
+    
+    const cmdParts = command.toLowerCase().split(' ');
+    const mainCmd = cmdParts[0];
+
+    if (mainCmd === 'clear') {
+        output.innerHTML = '';
+    } else if (commands[mainCmd]) {
+        typeToTerminal(commands[mainCmd]);
+    } else if (mainCmd === 'cat' && cmdParts.length > 1) {
+        const filename = cmdParts[1];
+        if (catFiles[filename]) {
+            typeToTerminal(catFiles[filename]);
+        } else {
+            typeToTerminal(`<p class="error">cat: ${filename}: No such file or directory</p>`);
+        }
+    } else if (command.trim() !== '') {
+        typeToTerminal(`<p class="error">bash: ${command}: command not found</p>`);
+    }
+}
+
+// Event listener for user input
+input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const command = input.value;
+        executeCommand(command);
+        input.value = '';
+    }
+});
+
+// Focus on input when clicking anywhere on the terminal
+terminal.addEventListener('click', () => {
+    input.focus();
+});
+
+// Initial welcome message
+document.addEventListener('DOMContentLoaded', () => {
+    typeToTerminal(welcomeMessage);
+    input.focus();
+});
+
+</script>
+
+</body>
+</html>
